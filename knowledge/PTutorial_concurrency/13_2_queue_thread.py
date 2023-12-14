@@ -13,7 +13,9 @@ def producer(queue):
 def consumer(queue):
     while True:
         try:
+            print("before", queue.qsize())
             item = queue.get()
+            print("after", queue.qsize())
         except Empty:
             continue
         else:
