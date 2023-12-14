@@ -15,12 +15,12 @@ class GetConnection:
         self.connection = None
 
     def __enter__(self):
-        print("enter")
+        # print("enter")
         self.connection = self.pool.getconn()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        print("exit")
+        # print("exit")
         if isinstance(exc_type, Exception):
             self.connection.rollback()
         self.pool.putconn(self.connection)
