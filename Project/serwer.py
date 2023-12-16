@@ -2,6 +2,8 @@ import json
 import datetime
 import socket
 from user_sql import User
+from connection_pool import ConnectionPool
+from threading import Thread
 
 
 class Serwer:
@@ -38,6 +40,12 @@ list of users - only login user can see list of users
                                "messages": ""}
         self.user = User()
         self.list_of_current_login_users = []
+        self.check_connections_db()
+
+    def check_connections_db(self):
+        conn = ConnectionPool()
+        check_connections = Thread(target=conn.check_amount_of_conections, daemon=True)
+        check_connections.start()
 
     def run(self):
         conn, addr = self.lsock.accept()  # Should be ready to read
