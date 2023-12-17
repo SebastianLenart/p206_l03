@@ -8,12 +8,13 @@ import datetime
 class User:
     BUFOR_MESSAGES = 5
 
-    def __init__(self):
+    def __init__(self, connection_db):
         self.nick = None
         self.password = None
         self.admin = None
         self.messages = None
         self.users_file = None
+        self.connection_db = connection_db
 
     # add to new user can only admin
     def register_new_user(self, nick="Default", password="1234", admin=False):

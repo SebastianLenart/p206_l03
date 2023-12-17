@@ -38,13 +38,13 @@ list of users - only login user can see list of users
                                "password": "",
                                "admin": "default",
                                "messages": ""}
-        self.user = User()
+        self.connection_db = ConnectionPool()
+        self.user = User(self.connection_db)
         self.list_of_current_login_users = []
         self.check_connections_db()
 
     def check_connections_db(self):
-        conn = ConnectionPool()
-        check_connections = Thread(target=conn.check_amount_of_conections, daemon=True)
+        check_connections = Thread(target=self.connection_db.check_amount_of_conections, daemon=True)
         check_connections.start()
 
     def run(self):
