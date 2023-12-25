@@ -1,5 +1,5 @@
 from pprint import pprint
-
+import time
 CREATE_ACCOUNT = """CREATE TABLE IF NOT EXISTS account 
 (id_account SERIAL PRIMARY KEY, nick TEXT, password TEXT, admin BOOLEAN);"""
 
@@ -111,6 +111,13 @@ def get_list_nicks(connection):
     with connection.get_cursor() as cursor:
         cursor.execute(SELECT_LIST_USERS)
         return cursor.fetchall()
+
+
+def get_list_nicks2(connection):
+    cursor = connection.cursor()
+    cursor.execute(SELECT_LIST_USERS)
+    time.sleep(1)
+    return cursor.fetchall()
 
 
 def get_base_info(connection, nick):

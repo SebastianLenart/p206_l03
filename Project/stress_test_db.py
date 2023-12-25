@@ -2,35 +2,58 @@ from connect_sql import GetConnection
 import database
 from threading import Thread
 from time import perf_counter
+import time
 from concurrent.futures import ThreadPoolExecutor
+from connection_pool import ConnectionPool
 
 
-
-def show_list_users():
-    with GetConnection() as connection:
-        return [element[0] for element in database.get_list_nicks(connection)]
-
-
-def main():
-    pass
-
-
+def show_list_users2(connection):
+    try:
+        conn = connection.get_connection()
+        return_list = [element[0] for element in database.get_list_nicks2(conn)]
+        connection.release_connection(conn)
+        print(return_list)
+        return return_list
+    except AttributeError:
+        print("Attribute Error")
+    except TypeError:
+        print("typeError")
 
 
 if __name__ == "__main__":
-
+    connection = ConnectionPool()
     start_time = perf_counter()
 
-    # without thread:
-    for _ in range(10):
-        show_list_users()
-
     # with thread
-    for _ in range(10):
-        with ThreadPoolExecutor() as executor:
-            executor.map(show_list_users())
+    # 1 sposob
+    # for _ in range(21):
+    #     with ThreadPoolExecutor() as executor:
+    #         executor.map(show_list_users2(connection))
+
+    # 2 sposob
+    threads = []
+    for _ in range(330):
+        t = Thread(target=show_list_users2, args=(connection,))
+        threads.append(t)
+        t.start()
+
+    for t in threads:
+        t.join()
+
+
 
     end_time = perf_counter()
-    print(f'It took {end_time- start_time :0.2f} second(s) to complete.')
+    print(f'It took {end_time - start_time :0.2f} second(s) to complete.')
+"""
+1 sposob:
+klasa connection pool nie chciaa tworzyc nowych poczen, zamiast tego czekaa az sie zwolni polaczenie poprezednie
+dziaa to bardziej po kolei nieli rwnolegle, dodajac 1 s delay w sqlu, program bedzie czeka tsekunde az sie zwolni polaczenie, mimo ze ma 19 polaczen
+do dyspozycji
 
-    main()
+
+2 sposob: sephore max na 3/4 to wiecej sie zacina
+na poczatku jest nawiazywana komunikacja, wszystkie polaczenia sa nawiazywane, potem dodawane sa kolejne az do 90 potem
+dlugi okres gdzie sa zglaszane wyjatki, ale potem sa wypuszczane poprzednie polaczenia do kolejki 
+i > 90 mozna przebrabiac
+
+"""
