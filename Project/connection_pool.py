@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import psycopg2
 
 
+
 # SELECT * FROM pg_stat_activity;
 
 class ConnectionPool:
@@ -25,6 +26,7 @@ class ConnectionPool:
         self.time_check = time_check
         self.standard_amount_of_connections = standard_amount_of_connections
         self.max_connections = 90
+        self.min_connections = 10
         self.active_connections = 0
         self.queue = Queue(maxsize=self.max_connections)
         self.semaphore = threading.Semaphore(2)
@@ -39,20 +41,18 @@ class ConnectionPool:
         }
 
     def init_connections(self):
-        while self.queue.qsize() < 20:
+        while self.queue.qsize() < self.min_connections:
             self.add_connection_to_queue(self.db_params)
 
     # start when serwer started
     def check_amount_of_conections(self):
         while True:
-            if self.queue.qsize() > 10:
-                for _ in range(self.queue.qsize() - 10):
-                    # conn = self.queue.get()
-                    # conn.release_connection(conn)
-                    # print("active:", self.active_connections)
-                    # print("queuesieze:", self.queue.qsize())
-                    pass
-            time.sleep(5)
+            if self.queue.qsize() > self.min_connections:
+                for _ in range(self.queue.qsize() - self.min_connections):
+                    self.queue.get()
+                    print("xxactive:", self.active_connections)
+                    print("xxqueuesieze:", self.queue.qsize())
+            time.sleep(10)
 
     def get_connection(self):
         with self.semaphore:

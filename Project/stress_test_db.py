@@ -22,6 +22,8 @@ def show_list_users2(connection):
 
 if __name__ == "__main__":
     connection = ConnectionPool()
+    check_connections = Thread(target=connection.check_amount_of_conections, daemon=True)
+    check_connections.start()
     start_time = perf_counter()
 
     # with thread
@@ -31,6 +33,7 @@ if __name__ == "__main__":
     #         executor.map(show_list_users2(connection))
 
     # 2 sposob
+    input("something: ")
     threads = []
     for _ in range(330):
         t = Thread(target=show_list_users2, args=(connection,))
@@ -39,6 +42,17 @@ if __name__ == "__main__":
 
     for t in threads:
         t.join()
+
+    input("something: ")
+    threads = []
+    for _ in range(330):
+        t = Thread(target=show_list_users2, args=(connection,))
+        threads.append(t)
+        t.start()
+
+    for t in threads:
+        t.join()
+    input("something: ")
 
 
 
