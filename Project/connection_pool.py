@@ -8,17 +8,10 @@ from dotenv import load_dotenv
 import psycopg2
 
 
-
+# zapytanie SQL ktre pokazuje liczbe otwartych polaczen aktualnych
 # SELECT * FROM pg_stat_activity;
 
 class ConnectionPool:
-    db_params = {
-        "dbname": getenv("DB_NAME", "postgres"),
-        "user": getenv("DB_USER", "postgres"),
-        "password": getenv("DB_PASSWORD", "1234"),
-        "host": getenv("DB_HOST", "localhost")
-    }
-
     def __init__(self, time_check=3, standard_amount_of_connections=10):
         load_dotenv()
         self.read_db_param()
@@ -29,7 +22,7 @@ class ConnectionPool:
         self.min_connections = 10
         self.active_connections = 0
         self.queue = Queue(maxsize=self.max_connections)
-        self.semaphore = threading.Semaphore(2)
+        self.semaphore = threading.Semaphore()
         self.init_connections()
 
     def read_db_param(self):
@@ -49,10 +42,11 @@ class ConnectionPool:
         while True:
             if self.queue.qsize() > self.min_connections:
                 for _ in range(self.queue.qsize() - self.min_connections):
-                    self.queue.get()
+                    conn = self.queue.get()
+                    conn.close()
                     print("xxactive:", self.active_connections)
                     print("xxqueuesieze:", self.queue.qsize())
-            time.sleep(10)
+            time.sleep(40)
 
     def get_connection(self):
         with self.semaphore:
@@ -69,18 +63,20 @@ class ConnectionPool:
             return conn
 
     def add_connection_to_queue(self, param_db):
-            if self.active_connections < self.max_connections:
-                if isinstance(param_db, dict):
-                    self.queue.put(psycopg2.connect(**param_db))
-                else:
-                    self.queue.put(param_db)
-                return True
-            else:
-                # raise TooMuchConnections
-                return False
+        if isinstance(param_db, dict) and self.active_connections < self.max_connections:
+            # add new connection
+            print("disc")
+            self.queue.put(psycopg2.connect(**param_db))
+            return True
+        elif isinstance(param_db, psycopg2.extensions.connection) and self.queue.qsize() < self.max_connections:
+            # add old connection
+            print("put")
+            self.queue.put(param_db)
+            return True
+        else:
+            raise TooMuchConnections
 
     def release_connection(self, conn):
-        print("release")
         with self.semaphore:
             try:
                 if conn is not None:
@@ -96,11 +92,7 @@ class ConnectionPool:
 if __name__ == '__main__':
     conn = ConnectionPool()
     conn.init_connections()
-    # check_connections = Thread(target=conn.check_amount_of_conections, daemon=True)
-    # check_connections.start()
 
-    input("something: ")
-    print("END")
 
 class TooMuchConnections(Exception):
     pass
